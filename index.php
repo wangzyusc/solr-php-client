@@ -4,6 +4,20 @@ include 'SpellCorrector.php';
 // make sure browsers see this page as utf-8 encoded HTML
 header('Content-Type: text/html; charset=utf-8');
 
+$MAPFILE = "UrlToHtml_Newday.csv";
+$urlmap = array();
+if (($handle = fopen($MAPFILE, "r")) !== FALSE) {
+  while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+    $num = count($data);
+    if($num !== 2){
+      echo "The map file is malformed!";
+      break;
+    }
+    $urlmap[$data[0]] = $data[1];
+  }
+  fclose($handle);
+}
+
 $limit = 10;
 $query = isset($_REQUEST['q']) ? $_REQUEST['q'] : false;
 $results = false;
@@ -135,35 +149,53 @@ if ($results)
 // iterate result documents
   foreach ($results->response->docs as $doc)
   {
-	// iterate document fields / values
-	$contents = array();
-	foreach ($doc as $field => $value)
-	{
-		if($field == 'og_url' || $field == 'title' || $field == 'og_description' || $field == 'id')
-			$contents[$field] = $value;
-	}
-	if(!array_key_exists('og_url', $contents)){
-		//check url with csv file
-		//const MAPFILE = "/Users/zhiyuanwang/Documents/USC/CSCI572/assignments/assignment4/working/UrlToHtml_Newday.csv";
-		$MAPFILE = "UrlToHtml_Newday.csv";
-		if (($handle = fopen($MAPFILE, "r")) !== FALSE) {
-    			while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-    				$num = count($data);
-    				if($num !== 2){
-    					echo "The map file is malformed!";
-    					break;
-    				}
-    				if($data[0] == $targetid){
-    					$contents['og_url'] = $data[1];
-    					break;
-    				}
-    			}
-    			fclose($handle);
-		}
-	}
-	if(!array_key_exists('og_description', $contents)){
-		$contents['og_description'] = 'NA';
-	}
+  	// iterate document fields / values
+  	$contents = array();
+  	foreach ($doc as $field => $value)
+  	{
+  		if($field == 'og_url' || $field == 'title' || $field == 'og_description' || $field == 'id')
+  			$contents[$field] = $value;
+  	}
+  	if(!array_key_exists('og_url', $contents)){
+  		//check url with csv file
+  		$contents['og_url'] = $urlmap[$targetid];
+  	}
+  	if(!array_key_exists('og_description', $contents)){
+  		$contents['og_description'] = 'NA';
+  	}
+    $name = end(explode('/', $doc->id));
+    $dom = new DOMDocument();
+    libxml_use_internal_errors(true);
+    $dom->loadHTMLFile("./CrawlData/".$name);
+    libxml_clear_errors();
+    $tags=$dom->getElementsByTagName('p');
+    $content = $dom->saveHTML();
+    $snipet = "NA";
+    $arr = explode(" ", $query);
+    //should check with each sentence separately!!!
+    //Do it tomorrow!
+    foreach ($tags as $tag) {
+      $p = $tag->nodeValue."\n";
+      $found = False;
+      foreach ($arr as $word) {
+        $position = stripos($p, $word);
+        if($position !== False) {
+          $end = strpos($content, ".", $position);
+          $start = strrpos(substr($p , 0, $position), ".") + 0;
+          $len =  $end - $start + 1;
+          if($len > 160) {
+            $len = 160;
+          }
+          $snipet = substr($p, $start, $len);
+          $found = true;
+          break;
+        }
+      }
+      if($found) {
+        break;
+      }
+    }
+    $contents["og_description"] = $snipet;
 ?>
 	<li>
 	<!--<table style ="border: 1px solid black; text-align: left; border-radius:10px; ">-->
