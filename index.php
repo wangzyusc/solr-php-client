@@ -179,11 +179,12 @@ if ($results)
     $found = False;
     foreach ($tags as $tag) {
       $p = $tag->nodeValue."\n";
+      //echo $p;
       $sentences = explode(". ", $p);
       foreach($sentences as $sentence){
         $notfound = False;
         foreach ($arr as $keyword) {
-          $position = stripos($sentence, $word);
+          $position = stripos($sentence, $keyword);
           if($position == False) {
             $notfound = True;
             break;
@@ -200,6 +201,7 @@ if ($results)
       }
     }
     if($found == False){
+      //echo "<p>not found</p>";
       foreach ($tags as $tag) {
         $p = $tag->nodeValue."\n";
         foreach ($arr as $word) {
@@ -225,6 +227,10 @@ if ($results)
         $snipet = substr($snipet, 0, $len)."...";
       }
     }
+    else{
+      $snipet = "";
+    }
+    //echo $snipet;
     //$contents["snipet"] = $snipet;
 ?>
 	<li>
@@ -234,19 +240,27 @@ if ($results)
 	<tr><th colspan=2><a href=<?php echo $contents['og_url']; ?> style="text-decoration:none;" target="_blank"><font color="green"><?php echo $contents['og_url']; ?></font></a></th></tr>
 	<tr><!--<th>Description</th>--><td width="50%" style="color: gray;">
     <?php
-      $punc = array(',', '.', '\'', '"');
+      $punc = array(',', '.', '\'', '"', '“', '”');
       $res = "<p>";
       $words = explode(" ", $snipet);
       foreach ($words as $word) {
         $head = "";
-        if(in_array($word[0], $punc)){
-          $head = $word[0];
+        if(in_array(substr($word, 0, 1), $punc)){
+          $head = substr($word, 0, 1);
           $word = substr($word, 1);
         }
+        if(in_array(substr($word, 0, 3), $punc)){
+          $head = substr($word, 0, 3);
+          $word = substr($word, 3);
+        }
         $tail = "";
-        if(in_array($word[strlen($word)-1], $punc)){
-          $tail = $word[strlen($word)-1];
+        if(in_array(substr($word, -1), $punc)){
+          $tail = substr($word, -1);
           $word = substr($word, 0, strlen($word)-1);
+        }
+        if(in_array(substr($word, -3), $punc)){
+          $tail = substr($word, -3);
+          $word = substr($word, 0, strlen($word)-3);
         }
         if(in_array(strtolower($word), $arr)){
           $res = $res.$head."<span style='font-weight:bold'>".$word."</span>".$tail." ";
