@@ -179,19 +179,22 @@ if ($results)
     $found = False;
     foreach ($tags as $tag) {
       $p = $tag->nodeValue."\n";
-      //echo $p;
       $sentences = explode(". ", $p);
       foreach($sentences as $sentence){
         $notfound = False;
+        $start = 0;
         foreach ($arr as $keyword) {
           $position = stripos($sentence, $keyword);
           if($position == False) {
             $notfound = True;
             break;
           }
+          if($position >= 160){
+            $start = $position - 140;
+          }
         }
         if($notfound == False){
-          $snipet = $sentence;
+          $snipet = "...".substr($sentence, $start)."...";
           $found = True;
           break;
         }
@@ -209,6 +212,9 @@ if ($results)
           if($position !== False) {
             $end = strpos($content, ".", $position);
             $start = strrpos(substr($p , 0, $position), ".") + 0;
+            if($position - $start > 159){
+              $start = $start + 20;
+            }
             $len =  $end - $start + 1;
             $snipet = substr($p, $start, $len);
             $found = True;
@@ -243,6 +249,7 @@ if ($results)
       $punc = array(',', '.', '\'', '"', '“', '”');
       $res = "<p>";
       $words = explode(" ", $snipet);
+      $check = False;
       foreach ($words as $word) {
         $head = "";
         if(in_array(substr($word, 0, 1), $punc)){
@@ -264,12 +271,16 @@ if ($results)
         }
         if(in_array(strtolower($word), $arr)){
           $res = $res.$head."<span style='font-weight:bold'>".$word."</span>".$tail." ";
+          $check = True;
         }
         else{
           $res = $res.$head.$word.$tail." ";
         }
       }
       $res = $res."</p>";
+      /*if($check == False){
+        $res = "";
+      }*/
       echo $res;
     ?>
     </td></tr>
