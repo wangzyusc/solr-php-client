@@ -171,9 +171,11 @@ if ($results)
     $tags=$dom->getElementsByTagName('p');
     $content = $dom->saveHTML();
     $snipet = "NA";
-    $arr = explode(" ", $query);
-    //should check with each sentence separately!!!
-    //Do it tomorrow!
+    $arr_old = explode(" ", $query);
+    $arr = array();
+    foreach($arr_old as $keyword){
+      array_push($arr, strtolower($keyword));
+    }
     $found = False;
     foreach ($tags as $tag) {
       $p = $tag->nodeValue."\n";
@@ -207,7 +209,7 @@ if ($results)
             $start = strrpos(substr($p , 0, $position), ".") + 0;
             $len =  $end - $start + 1;
             $snipet = substr($p, $start, $len);
-            $found = true;
+            $found = True;
             break;
           }
         }
@@ -223,7 +225,7 @@ if ($results)
         $snipet = substr($snipet, 0, $len)."...";
       }
     }
-    $contents["og_description"] = $snipet;
+    //$contents["snipet"] = $snipet;
 ?>
 	<li>
 	<!--<table style ="border: 1px solid black; text-align: left; border-radius:10px; ">-->
@@ -232,14 +234,25 @@ if ($results)
 	<tr><th colspan=2><a href=<?php echo $contents['og_url']; ?> style="text-decoration:none;" target="_blank"><font color="green"><?php echo $contents['og_url']; ?></font></a></th></tr>
 	<tr><!--<th>Description</th>--><td width="50%" style="color: gray;">
     <?php
+      $punc = array(',', '.', '\'', '"');
       $res = "<p>";
       $words = explode(" ", $snipet);
       foreach ($words as $word) {
+        $head = "";
+        if(in_array($word[0], $punc)){
+          $head = $word[0];
+          $word = substr($word, 1);
+        }
+        $tail = "";
+        if(in_array($word[strlen($word)-1], $punc)){
+          $tail = $word[strlen($word)-1];
+          $word = substr($word, 0, strlen($word)-1);
+        }
         if(in_array(strtolower($word), $arr)){
-          $res = $res."<span style='font-weight:bold'>".$word."</span> ";
+          $res = $res.$head."<span style='font-weight:bold'>".$word."</span>".$tail." ";
         }
         else{
-          $res = $res.$word." ";
+          $res = $res.$head.$word.$tail." ";
         }
       }
       $res = $res."</p>";
