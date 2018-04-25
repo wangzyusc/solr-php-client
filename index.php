@@ -174,25 +174,53 @@ if ($results)
     $arr = explode(" ", $query);
     //should check with each sentence separately!!!
     //Do it tomorrow!
+    $found = False;
     foreach ($tags as $tag) {
       $p = $tag->nodeValue."\n";
-      $found = False;
-      foreach ($arr as $word) {
-        $position = stripos($p, $word);
-        if($position !== False) {
-          $end = strpos($content, ".", $position);
-          $start = strrpos(substr($p , 0, $position), ".") + 0;
-          $len =  $end - $start + 1;
-          if($len > 160) {
-            $len = 160;
+      $sentences = explode(". ", $p);
+      foreach($sentences as $sentence){
+        $notfound = False;
+        foreach ($arr as $keyword) {
+          $position = stripos($sentence, $word);
+          if($position == False) {
+            $notfound = True;
+            break;
           }
-          $snipet = substr($p, $start, $len);
-          $found = true;
+        }
+        if($notfound == False){
+          $snipet = $sentence;
+          $found = True;
           break;
         }
       }
-      if($found) {
+      if($found){
         break;
+      }
+    }
+    if($found == False){
+      foreach ($tags as $tag) {
+        $p = $tag->nodeValue."\n";
+        foreach ($arr as $word) {
+          $position = stripos($p, $word);
+          if($position !== False) {
+            $end = strpos($content, ".", $position);
+            $start = strrpos(substr($p , 0, $position), ".") + 0;
+            $len =  $end - $start + 1;
+            $snipet = substr($p, $start, $len);
+            $found = true;
+            break;
+          }
+        }
+        if($found) {
+          break;
+        }
+      }
+    }
+    if($found){
+      $len = strlen($snipet);
+      if($len > 160) {
+        $len = 160;
+        $snipet = substr($snipet, 0, $len)."...";
       }
     }
     $contents["og_description"] = $snipet;
@@ -200,10 +228,25 @@ if ($results)
 	<li>
 	<!--<table style ="border: 1px solid black; text-align: left; border-radius:10px; ">-->
 	<table style ="text-align: left;" width="50%">
-	<tr><th colspan=2><a href=<?php echo $contents['og_url']; ?> style="text-decoration:none;" target="_blank"><p style="font-size:18px;"><?php echo $contents['title']; ?></p></th></tr>
+	<tr><th colspan=2><a href=<?php echo "./CrawlData/".end(explode("/", $contents['id'])); ?> style="text-decoration:none;" target="_blank"><p style="font-size:18px;"><?php echo $contents['title']; ?></p></th></tr>
 	<tr><th colspan=2><a href=<?php echo $contents['og_url']; ?> style="text-decoration:none;" target="_blank"><font color="green"><?php echo $contents['og_url']; ?></font></a></th></tr>
-	<tr><th>Description</th><td width="50%"><?php echo $contents['og_description']; ?></td></tr>
-	<tr><th>ID</th><td><?php echo $contents['id']; ?></td></tr>
+	<tr><!--<th>Description</th>--><td width="50%" style="color: gray;">
+    <?php
+      $res = "<p>";
+      $words = explode(" ", $snipet);
+      foreach ($words as $word) {
+        if(in_array(strtolower($word), $arr)){
+          $res = $res."<span style='font-weight:bold'>".$word."</span> ";
+        }
+        else{
+          $res = $res.$word." ";
+        }
+      }
+      $res = $res."</p>";
+      echo $res;
+    ?>
+    </td></tr>
+	<!--<tr><th>ID</th><td><?php echo $contents['id']; ?></td></tr>-->
 	</table>
 	</li>
 <?php
